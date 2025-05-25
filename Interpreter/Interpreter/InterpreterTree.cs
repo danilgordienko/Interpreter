@@ -252,20 +252,20 @@ namespace Interpreter.Interpreter
         public override bool EvalBool() => Left.EvalReal() < Right.EvalReal();
     }
 
-    //public class LessIC : BinOpNodeI
-    //{
-    //    public int Value { get; }
+    public class LessIC : BinOpNodeI
+    {
+        public int Value { get; }
 
-    //    public LessIC(ExprNodeI left, int value) 
-    //    {
-    //        Value = value;
-    //    }
+        public LessIC(ExprNodeI left, int value): base(left, null)
+        {
+            Value = value;
+        }
 
-    //    public override bool EvalBool()
-    //    {
-    //        return Left.EvalInt() < Value;
-    //    }
-    //}
+        public override bool EvalBool()
+        {
+            return Left.EvalInt() < Value;
+        }
+    }
 
     // Меньше или равно (<=)
     public class LessEqII : BinOpNodeI
@@ -425,21 +425,21 @@ namespace Interpreter.Interpreter
         public override double EvalReal() => Val;
     }
 
-    public class IdNodeI : ExprNodeI
+    public unsafe class IdNodeI : ExprNodeI
     {
         public int* pi;
         public IdNodeI(int* pi) => this.pi = pi;
         public override int EvalInt() => *pi;
     }
 
-    public class IdNodeR : ExprNodeI
+    public unsafe class IdNodeR : ExprNodeI
     {
         public double* pr;
         public IdNodeR(double* pr) => this.pr = pr;
         public override double EvalReal() => *pr;
     }
 
-    public class IdNodeB : ExprNodeI
+    public unsafe class IdNodeB : ExprNodeI
     {
         public bool* pb;
         public IdNodeB(bool* pb) => this.pb = pb;
@@ -452,7 +452,7 @@ namespace Interpreter.Interpreter
         public IdNodeFun(string name) => Name = name;
     }
 
-    public class AssignIntNodeI : StatementNodeI
+    public unsafe class AssignIntNodeI : StatementNodeI
     {
         public int* pi;
         public ExprNodeI Expr;
@@ -466,7 +466,7 @@ namespace Interpreter.Interpreter
         public override void Execute() => *pi = Expr.EvalInt();
     }
 
-    public class AssignIntCNodeI : StatementNodeI
+    public unsafe class AssignIntCNodeI : StatementNodeI
     {
         public int* pi;
         public int val;
@@ -480,7 +480,7 @@ namespace Interpreter.Interpreter
         public override void Execute() => *pi = val;
     }
 
-    public class AssignRealNodeI : StatementNodeI
+    public unsafe class AssignRealNodeI : StatementNodeI
     {
         public double* pr;
         public ExprNodeI Expr;
@@ -494,7 +494,7 @@ namespace Interpreter.Interpreter
         public override void Execute() => *pr = Expr.EvalReal();
     }
 
-    public class AssignRealCNodeI : StatementNodeI
+    public unsafe class AssignRealCNodeI : StatementNodeI
     {
         public double* pr;
         public double val;
@@ -508,7 +508,7 @@ namespace Interpreter.Interpreter
         public override void Execute() => *pr = val;
     }
 
-    public class AssignRealIntCNodeI : StatementNodeI
+    public unsafe class AssignRealIntCNodeI : StatementNodeI
     {
         public double* pr;
         public int val;
@@ -522,7 +522,7 @@ namespace Interpreter.Interpreter
         public override void Execute() => *pr = val;
     }
 
-    public class AssignBoolNodeI : StatementNodeI
+    public unsafe class AssignBoolNodeI : StatementNodeI
     {
         public bool* pb;
         public ExprNodeI Expr;
@@ -535,31 +535,31 @@ namespace Interpreter.Interpreter
 
         public override void Execute() => *pb = Expr.EvalBool();
     }
-    public class AssignPlusIntNodeI : AssignIntNodeI
+    public unsafe class AssignPlusIntNodeI : AssignIntNodeI
     {
         public AssignPlusIntNodeI(int* pi, ExprNodeI expr) : base(pi, expr) { }
         public override void Execute() => *pi += Expr.EvalInt();
     }
 
-    public class AssignPlusRealNodeI : AssignRealNodeI
+    public unsafe class AssignPlusRealNodeI : AssignRealNodeI
     {
         public AssignPlusRealNodeI(double* pr, ExprNodeI expr) : base(pr, expr) { }
         public override void Execute() => *pr += Expr.EvalReal();
     }
 
-    public class AssignPlusIntCNodeI : AssignIntCNodeI
+    public unsafe class AssignPlusIntCNodeI : AssignIntCNodeI
     {
         public AssignPlusIntCNodeI(int* pi, int val) : base(pi, val) { }
         public override void Execute() => *pi += val;
     }
 
-    public class AssignPlusRealCNodeI : AssignRealCNodeI
+    public unsafe class AssignPlusRealCNodeI : AssignRealCNodeI
     {
         public AssignPlusRealCNodeI(double* pr, double val) : base(pr, val) { }
         public override void Execute() => *pr += val;
     }
 
-    public class AssignPlusRealIntCNodeI : AssignRealIntCNodeI
+    public unsafe class AssignPlusRealIntCNodeI : AssignRealIntCNodeI
     {
         public AssignPlusRealIntCNodeI(double* pr, int val) : base(pr, val) { }
         public override void Execute() => *pr += val;
@@ -619,13 +619,13 @@ namespace Interpreter.Interpreter
             switch (Name)
             {
                 case "PrintReal":
-                    Console.WriteLine(Pars.lst[0].EvalReal());
+                    Console.WriteLine(Pars.List[0].EvalReal());
                     break;
                 case "PrintInt":
-                    Console.WriteLine(Pars.lst[0].EvalInt());
+                    Console.WriteLine(Pars.List[0].EvalInt());
                     break;
                 case "PrintBool":
-                    Console.WriteLine(Pars.lst[0].EvalBool());
+                    Console.WriteLine(Pars.List[0].EvalBool());
                     break;
             }
         }

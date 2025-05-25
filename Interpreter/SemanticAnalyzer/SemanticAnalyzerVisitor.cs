@@ -13,7 +13,7 @@ using static Interpreter.Parser.ASTNodes;
 namespace Interpreter.SemanticAnalyzer
 {
 
-    public class SemanticAnalyzerVisitor : IVisitor<string>
+    public class SemanticAnalyzerVisitor : IVisitorP
     {
         private int index = 0;
 
@@ -21,19 +21,19 @@ namespace Interpreter.SemanticAnalyzer
 
         public void Analyze(StatementNode node)
         {
-            node.Visit(this);
+            node.VisitP(this);
         }
 
-        public string VisitNode(Node n) => n.Visit(this);
+        public void VisitNode(Node n) => n.VisitP(this);
 
-        public string VisitExprNode(ExprNode ex) => ex.Visit(this);
+        public void VisitExprNode(ExprNode ex) => ex.VisitP(this);
 
-        public string VisitStatementNode(StatementNode st) => st.Visit(this);
+        public void VisitStatementNode(StatementNode st) => st.VisitP(this);
 
-        public string VisitBinOp(BinOpNode bin)
+        public void VisitBinOp(BinOpNode bin)
         {
-            bin.Left.Visit(this);
-            bin.Right.Visit(this);
+            bin.Left.VisitP(this);
+            bin.Right.VisitP(this);
             TokenType leftType = GetExprType(bin.Left);
             TokenType rightType = GetExprType(bin.Right);
 
@@ -43,7 +43,7 @@ namespace Interpreter.SemanticAnalyzer
                 CompilerErrors.SemanticError($"Типы несовместимы: {leftType} и {rightType} для операции '{bin.Op}'", bin.Pos);
             }
 
-            if (bin.Op == '>' || bin.Op == '<' || bin.Op == '=')
+            if (bin.Op.Equals(OpType.opGreater) || bin.Op.Equals(OpType.opLess) || bin.Op.Equals(OpType.opEqual))
             {
                 if (leftType != TokenType.Int && leftType != TokenType.DoubleLiteral)
                 {
@@ -51,52 +51,48 @@ namespace Interpreter.SemanticAnalyzer
                 }
             }
 
-            if (bin.Op == '&' || bin.Op == '|') 
-            {
-                if (leftType != TokenType.Boolean || rightType != TokenType.Boolean)
-                {
-                    CompilerErrors.SemanticError($"Операция '{bin.Op}' требует тип Boolean, но найден тип {leftType}", bin.Pos);
-                }
-            }
-            return "";
+            //if (bin.Op == '&'bin.Op.Equals(OpType.opGreater) || bin.Op == '|') 
+            //{
+            //    if (leftType != TokenType.Boolean || rightType != TokenType.Boolean)
+            //    {
+            //        CompilerErrors.SemanticError($"Операция '{bin.Op}' требует тип Boolean, но найден тип {leftType}", bin.Pos);
+            //    }
+            //}
         }
 
-        public string VisitStatementList(StatementListNode stl)
+        public void VisitStatementList(StatementListNode stl)
         {
             foreach (var stmt in stl.Statements)
             {
-                stmt.Visit(this);
+                stmt.VisitP(this);
             }
-            return "";
         }
 
-        public string VisitExprList(ExprListNode exlist)
+        public void VisitExprList(ExprListNode exlist)
         {
             foreach (var expr in exlist.Expressions)
             {
-                expr.Visit(this);
+                expr.VisitP(this);
             }
-            return "";
         }
 
-        public string VisitInt(IntNode n) => n.Value.ToString();
+        public void VisitInt(IntNode n) => n.Value.ToString();
 
-        public string VisitDouble(DoubleNode d) => d.Value.ToString();
+        public void VisitDouble(DoubleNode d) => d.Value.ToString();
 
-        public string VisitId(IdNode id)
+        public void VisitId(IdNode id)
         {
             if (!SymbolTable.SymTable.ContainsKey(id.Name))
             {
                 CompilerErrors.SemanticError($"Переменная '{id.Name}' не объявлена", id.Pos);
             }
-            return id.Name;
         }
 
-        public string VisitBoolean(BooleanNode b) => b.Value.ToString();
+        public void VisitBoolean(BooleanNode b) => b.Value.ToString();
 
-        public string VisitAssign(AssignNode ass)
+        public void VisitAssign(AssignNode ass)
         {
-            ass.Expr.Visit(this);
+            ass.Expr.VisitP(this);
 
             TokenType exprType = GetExprType(ass.Expr);
             if (SymbolTable.SymTable.ContainsKey(ass.Ident.Name))
@@ -122,54 +118,50 @@ namespace Interpreter.SemanticAnalyzer
                 CompilerErrors.SemanticError($"Ошибка: нельзя присвоить {exprType} переменной {ass.Ident.Name} типа {SymbolTable.SymTable[ass.Ident.Name].Type}", ass.Pos);
             }
 
-            return ass.Ident.Name;
         }
 
-        public string VisitAssignPlus(AssignPlusNode ass)
+        public void VisitAssignPlus(AssignPlusNode ass)
         {
             if (!SymbolTable.SymTable.ContainsKey(ass.Ident.Name))
             {
                 CompilerErrors.SemanticError($"Переменная '{ass.Ident.Name}' не объявлена", ass.Pos);
             }
-            ass.Expr.Visit(this);
+            ass.Expr.VisitP(this);
             TokenType exprType = GetExprType(ass.Expr);
             if (SymbolTable.SymTable[ass.Ident.Name].Type != exprType)
             {
                 CompilerErrors.SemanticError($"Типы несовместимы: переменная '{ass.Ident.Name}' имеет тип {SymbolTable.SymTable[ass.Ident.Name]}, а выражение типа {exprType}", ass.Pos);
             }
-            return ass.Ident.Name + " += " + ass.Expr.Visit(this);
         }
 
-        public string VisitIf(IfNode ifn)
+        public void VisitIf(IfNode ifn)
         {
-            ifn.Condition.Visit(this);
+            ifn.Condition.VisitP(this);
             TokenType condType = GetExprType(ifn.Condition);
             if (condType != TokenType.Boolean)
             {
                 CompilerErrors.SemanticError($"Условие должно быть типа {TokenType.Boolean}, но найден тип {condType}", ifn.Pos);
             }
-            ifn.ThenStat.Visit(this);
-            if (ifn.ElseStat != null) ifn.ElseStat.Visit(this);
-            return "";
+            ifn.ThenStat.VisitP(this);
+            if (ifn.ElseStat != null) ifn.ElseStat.VisitP(this);
         }
 
-        public string VisitWhile(WhileNode whn)
+        public void VisitWhile(WhileNode whn)
         {
-            whn.Condition.Visit(this);
+            whn.Condition.VisitP(this);
             TokenType condType = GetExprType(whn.Condition);
             if (condType != TokenType.Boolean)
             {
                 CompilerErrors.SemanticError($"Условие должно быть типа {TokenType.Boolean}, но найден тип {condType}", whn.Pos);
             }
-            whn.Stat.Visit(this);
-            return "";
+            whn.Stat.VisitP(this);
         }
 
-        public string VisitProcCall(ProcCallNode p)
-            => p.Name.Name + "(" + p.Parameters.Visit(this) + ")";
+        public void VisitProcCall(ProcCallNode p) { }
+            //=> p.Name.Name + "(" + p.Parameters.VisitP(this) + ")";
 
-        public string VisitFuncCall(FuncCallNode f)
-            => f.Name.Name + "(" + f.Parameters.Visit(this) + ")";
+        public void VisitFuncCall(FuncCallNode f) { }
+            //=> f.Name.Name + "(" + f.Parameters.VisitP(this) + ")";
 
         private TokenType GetExprType(ExprNode expr)
         {
@@ -181,8 +173,8 @@ namespace Interpreter.SemanticAnalyzer
                 IdNode idNode => SymbolTable.SymTable.ContainsKey(idNode.Name) ? SymbolTable.SymTable[idNode.Name].Type : TokenType.Undefined,
                 BinOpNode binOp => binOp.Op switch
                 {
-                    '<' or '>' or '=' or '!' => TokenType.Boolean,
-                    '&' or '|' => TokenType.Boolean,
+                    OpType.opGreater or OpType.opLess or OpType.opEqual or OpType.opNot => TokenType.Boolean,
+                    //'&' or '|' => TokenType.Boolean,
                     _ => GetExprType(binOp.Left)
                 },
                 _ => TokenType.Undefined

@@ -7,6 +7,27 @@ namespace Interpreter.Parser
 {
     internal class ParserUnit : ParserUnitBase
     {
+        public OpType TokenToOp(TokenType t)
+        {
+            switch (t)
+            {
+                case TokenType.Plus: return OpType.opPlus;
+                case TokenType.Minus: return OpType.opMinus;
+                case TokenType.Multiply: return OpType.opMultiply;
+                case TokenType.Divide: return OpType.opDivide;
+                case TokenType.Equal: return OpType.opEqual;
+                case TokenType.Less: return OpType.opLess;
+                case TokenType.LessEqual: return OpType.opLessEqual;
+                case TokenType.Greater: return OpType.opGreater;
+                case TokenType.GreaterEqual: return OpType.opGreaterEqual;
+                case TokenType.NotEqual: return OpType.opNotEqual;
+                case TokenType.tkAnd: return OpType.opAnd;
+                case TokenType.tkOr: return OpType.opOr;
+                case TokenType.tkNot: return OpType.opNot;
+                default: return OpType.opBad;
+            }
+        }
+
         public ParserUnit(Lexer.Lexer lexer) : base(lexer) { }
 
         /// <summary>
@@ -132,7 +153,7 @@ namespace Interpreter.Parser
             {
                 var op = Advance();
                 var right = Comp();
-                expr = new BinOpNode(expr, right, op.value.ToString()[0], expr.Pos);
+                expr = new BinOpNode(expr, right, TokenToOp(op.type), expr.Pos);
             }
             return expr;
         }
@@ -147,7 +168,7 @@ namespace Interpreter.Parser
             {
                 var op = Advance();
                 var right = Term();
-                expr = new BinOpNode(expr, right, op.value.ToString()[0], expr.Pos);
+                expr = new BinOpNode(expr, right, TokenToOp(op.type), expr.Pos);
             }
             return expr;
         }
@@ -162,7 +183,7 @@ namespace Interpreter.Parser
             {
                 var op = Advance();
                 var right = Factor();
-                expr = new BinOpNode(expr, right, ((String)op.value)[0], expr.Pos);
+                expr = new BinOpNode(expr, right, TokenToOp(op.type), expr.Pos);
             }
             return expr;
         }

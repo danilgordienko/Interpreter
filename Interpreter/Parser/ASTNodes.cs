@@ -7,7 +7,7 @@ namespace Interpreter.Parser
     public enum OpType
     {
         opPlus,opMinus,opMultiply,opDivide,opEqual,opLess,opLessEqual,
-        opGreater, opGreaterEqual, opNotEqual,opAnd, opOr, opNot, opBad // для некорректной операции
+        opGreater, opGreaterEqual, opNotEqual,opAnd, opOr, opNot, opBad // для некорректной операци
     }
 
     public interface IVisitor<T>
@@ -30,36 +30,42 @@ namespace Interpreter.Parser
         T VisitFuncCall(FuncCallNode f);
     }
 
+    public interface IVisitorP
+    {
+        void VisitNode(Node bin);
+        void VisitExprNode(ExprNode bin);
+        void VisitStatementNode(StatementNode bin);
+        void VisitBinOp(BinOpNode bin);
+        void VisitStatementList(StatementListNode stl);
+        void VisitExprList(ExprListNode exlist);
+        void VisitInt(IntNode n);
+        void VisitDouble(DoubleNode d);
+
+        void VisitBoolean(BooleanNode b);
+        void VisitId(IdNode id);
+        void VisitAssign(AssignNode ass);
+        void VisitAssignPlus(AssignPlusNode ass);
+        void VisitIf(IfNode ifn);
+        void VisitWhile(WhileNode whn);
+        void VisitProcCall(ProcCallNode p);
+        void VisitFuncCall(FuncCallNode f);
+    }
+
+
 
     public class ASTNodes
     {
-        //public static readonly Dictionary<OpType, string> OpToStr = new Dictionary<OpType, string>
-        //{
-        //    { OpType.opPlus, "+" },
-        //    { OpType.opMinus, "-" },
-        //    { OpType.opMultiply, "*" },
-        //    { OpType.opDivide, "/" },
-        //    { OpType.opEqual, "==" },
-        //    { OpType.opLess, "<" },
-        //    { OpType.opLessEqual, "<=" },
-        //    { OpType.opGreater, ">" },
-        //    { OpType.opGreaterEqual, ">=" },
-        //    { OpType.opNotEqual, "!=" },
-        //    { OpType.opAnd, "&&" },
-        //    { OpType.opOr, "||" },
-        //    { OpType.opNot, "!" },
-        //    { OpType.opBad, "?" } // Для ошибок или неизвестных операций
-        //};
-
-        //private static Dictionary<string, Variable> Variables = new();
-
-
         public class Node
         {
             public Position Pos { get; set; }
             public virtual T Visit<T>(IVisitor<T> visitor)
             {
                 return visitor.VisitNode(this);
+            }
+
+            public virtual void VisitP(IVisitorP visitor)
+            {
+                visitor.VisitNode(this);
             }
         }
 
@@ -70,15 +76,24 @@ namespace Interpreter.Parser
             {
                 return visitor.VisitExprNode(this);
             }
+
+            public override void VisitP(IVisitorP visitor)
+            {
+                visitor.VisitExprNode(this);
+            }
         }
 
         public class StatementNode : Node
         {
-            public virtual void Execute() { }
 
             public override T Visit<T>(IVisitor<T> visitor)
             {
                 return visitor.VisitStatementNode(this);
+            }
+
+            public override void VisitP(IVisitorP visitor)
+            {
+                visitor.VisitStatementNode(this);
             }
         }
 
@@ -86,9 +101,9 @@ namespace Interpreter.Parser
         {
             public ExprNode Left { get; }
             public ExprNode Right { get; }
-            public char Op { get; }
+            public OpType Op { get; }
 
-            public BinOpNode(ExprNode left, ExprNode right, char op, Position pos)
+            public BinOpNode(ExprNode left, ExprNode right, OpType op, Position pos)
             {
                 Left = left;
                 Right = right;
@@ -101,24 +116,29 @@ namespace Interpreter.Parser
                 return visitor.VisitBinOp(this);
             }
 
-            public override double Eval()
+            public override void VisitP(IVisitorP visitor)
             {
-                var l = Left.Eval();
-                var r = Right.Eval();
-                return Op switch
-                {
-                    '+' => l + r,
-                    '*' => l * r,
-                    '/' => l / r,
-                    '<' => l < r ? 1 : 0,
-                    //_ => throw new InvalidOperationException($"Unsupported operation: {Op}")
-                };
+                visitor.VisitBinOp(this);
             }
+
+            //public override double Eval()
+            //{
+            //    var l = Left.Eval();
+            //    var r = Right.Eval();
+            //    return Op switch
+            //    {
+            //        '+' => l + r,
+            //        '*' => l * r,
+            //        '/' => l / r,
+            //        '<' => l < r ? 1 : 0,
+            //        //_ => throw new InvalidOperationException($"Unsupported operation: {Op}")
+            //    };
+            //}
         }
 
         public class StatementListNode : StatementNode
         {
-            public List<StatementNode> Statements { get; } = new();
+            public List<StatementNode> Statements { get; set; } = new();
 
             public void Add(StatementNode statement) => Statements.Add(statement);
 
@@ -127,24 +147,34 @@ namespace Interpreter.Parser
                 return visitor.VisitStatementList(this);
             }
 
-            public override void Execute()
+            public override void VisitP(IVisitorP visitor)
             {
-                foreach (var statement in Statements)
-                {
-                    statement.Execute();
-                }
+                visitor.VisitStatementList(this);
             }
+
+            //public override void Execute()
+            //{
+            //    foreach (var statement in Statements)
+            //    {
+            //        statement.Execute();
+            //    }
+            //}
         }
 
         public class ExprListNode : Node
         {
-            public List<ExprNode> Expressions { get; } = new();
+            public List<ExprNode> Expressions { get; set; } = new();
 
             public void Add(ExprNode expression) => Expressions.Add(expression);
 
             public override T Visit<T>(IVisitor<T> visitor)
             {
                 return visitor.VisitExprList(this);
+            }
+
+            public override void VisitP(IVisitorP visitor)
+            {
+                visitor.VisitExprList(this);
             }
         }
 
@@ -163,7 +193,12 @@ namespace Interpreter.Parser
                 return visitor.VisitBoolean(this);
             }
 
-            public override double Eval() => Value ? 1 : 0;
+            public override void VisitP(IVisitorP visitor)
+            {
+                visitor.VisitBoolean(this);
+            }
+
+            //public override double Eval() => Value ? 1 : 0;
         }
 
         public class IntNode : ExprNode
@@ -181,7 +216,12 @@ namespace Interpreter.Parser
                 return visitor.VisitInt(this);
             }
 
-            public override double Eval() => Value;
+            public override void VisitP(IVisitorP visitor)
+            {
+                visitor.VisitInt(this);
+            }
+
+            //public override double Eval() => Value;
         }
 
         public class DoubleNode : ExprNode
@@ -199,13 +239,18 @@ namespace Interpreter.Parser
                 return visitor.VisitDouble(this);
             }
 
-            public override double Eval() => Value;
+            public override void VisitP(IVisitorP visitor)
+            {
+                visitor.VisitDouble(this);
+            }
+
+            //public override double Eval() => Value;
         }
 
         public class IdNode : ExprNode
         {
             public string Name { get; }
-            public unsafe double* Ptr { get; private set; }
+            //public unsafe double* Ptr { get; private set; }
 
             public IdNode(string name, Position pos)
             {
@@ -222,14 +267,19 @@ namespace Interpreter.Parser
                 return visitor.VisitId(this);
             }
 
-
-            public override double Eval()
+            public override void VisitP(IVisitorP visitor)
             {
-                unsafe
-                {
-                    return *Ptr;
-                }
+                visitor.VisitId(this);
             }
+
+
+            //public override double Eval()
+            //{
+            //    unsafe
+            //    {
+            //        return *Ptr;
+            //    }
+            //}
         }
 
 
@@ -253,13 +303,18 @@ namespace Interpreter.Parser
                 return visitor.VisitAssign(this);
             }
 
-            public override void Execute()
+            public override void VisitP(IVisitorP visitor)
             {
-                unsafe
-                {
-                    *Ident.Ptr = Expr.Eval();
-                }
+                visitor.VisitAssign(this);
             }
+
+            //public override void Execute()
+            //{
+            //    unsafe
+            //    {
+            //        *Ident.Ptr = Expr.Eval();
+            //    }
+            //}
         }
 
 
@@ -280,13 +335,18 @@ namespace Interpreter.Parser
                 return v.VisitAssignPlus(this);
             }
 
-            public override void Execute()
+            public override void VisitP(IVisitorP visitor)
             {
-                unsafe
-                {
-                    *Ident.Ptr += Expr.Eval();
-                }
+                visitor.VisitAssignPlus(this);
             }
+
+            //public override void Execute()
+            //{
+            //    unsafe
+            //    {
+            //        *Ident.Ptr += Expr.Eval();
+            //    }
+            //}
         }
 
         public class IfNode : StatementNode
@@ -308,17 +368,22 @@ namespace Interpreter.Parser
                 return v.VisitIf(this);
             }
 
-            public override void Execute()
+            public override void VisitP(IVisitorP visitor)
             {
-                if (Condition.Eval() > 0)
-                {
-                    ThenStat.Execute();
-                }
-                else if (ElseStat != null)
-                {
-                    ElseStat.Execute();
-                }
+                visitor.VisitIf(this);
             }
+
+            //public override void Execute()
+            //{
+            //    if (Condition.Eval() > 0)
+            //    {
+            //        ThenStat.Execute();
+            //    }
+            //    else if (ElseStat != null)
+            //    {
+            //        ElseStat.Execute();
+            //    }
+            //}
         }
 
         public class WhileNode : StatementNode
@@ -338,13 +403,18 @@ namespace Interpreter.Parser
                 return v.VisitWhile(this);
             }
 
-            public override void Execute()
+            public override void VisitP(IVisitorP visitor)
             {
-                while (Condition.Eval() > 0)
-                {
-                    Stat.Execute();
-                }
+                visitor.VisitWhile(this);
             }
+
+            //public override void Execute()
+            //{
+            //    while (Condition.Eval() > 0)
+            //    {
+            //        Stat.Execute();
+            //    }
+            //}
         }
 
         public class ProcCallNode : StatementNode
@@ -364,13 +434,18 @@ namespace Interpreter.Parser
                 return v.VisitProcCall(this);
             }
 
-            public override void Execute()
+            public override void VisitP(IVisitorP visitor)
             {
-                if (Name.Name.ToLower() == "print")
-                {
-                    Console.WriteLine(Parameters.Expressions[0].Eval());
-                }
+                visitor.VisitProcCall(this);
             }
+
+            //public override void Execute()
+            //{
+            //    if (Name.Name.ToLower() == "print")
+            //    {
+            //        Console.WriteLine(Parameters.Expressions[0].Eval());
+            //    }
+            //}
         }
 
         public class FuncCallNode : ExprNode
@@ -389,6 +464,52 @@ namespace Interpreter.Parser
             {
                 return v.VisitFuncCall(this);
             }
+
+            public override void VisitP(IVisitorP visitor)
+            {
+                visitor.VisitFuncCall(this);
+            }
         }
+
+        public static class NodeHelpers
+        {
+            public static BinOpNode Bin(ExprNode left, OpType op, ExprNode right, Position pos = null)
+                => new BinOpNode(left, right, op, pos);
+
+            public static AssignNode Ass(IdNode ident, ExprNode expr, TokenType type, Position pos = null)
+                => new AssignNode(ident, expr,type, pos);
+
+            public static IdNode Idd(string name, Position pos = null)
+                => new IdNode(name, pos);
+
+            public static DoubleNode Num(double value, Position pos = null)
+                => new DoubleNode(value, pos);
+
+            public static IfNode Iff(ExprNode cond, StatementNode th, StatementNode el, Position pos = null)
+                => new IfNode(cond, th, el, pos);
+
+            public static WhileNode Wh(ExprNode cond, StatementNode body, Position pos = null)
+                => new WhileNode(cond, body, pos);
+
+            public static StatementListNode StL(params StatementNode[] ss)
+            {
+                return new StatementListNode
+                {
+                    Statements = ss.ToList()
+                };
+            }
+
+            public static ExprListNode ExL(params ExprNode[] ee)
+            {
+                return new ExprListNode
+                {
+                    Expressions = ee.ToList()
+                };
+            }
+
+            public static ProcCallNode ProcCall(IdNode name, ExprListNode exlist, Position pos = null)
+                => new ProcCallNode(name, exlist, pos);
+        }
+
     }
 }

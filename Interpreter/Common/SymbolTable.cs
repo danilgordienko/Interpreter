@@ -25,6 +25,14 @@ namespace Interpreter.Common
             }
         }
 
+        //public static void InitStandardFunctionsTable()
+        //{
+        //    SymTable["Sqrt"] = new Variable("Sqrt", KindType.FuncName, new[] { TypeSystem.DoubleType }, TypeSystem.DoubleType, -1);
+        //    SymTable["PrintReal"] = new Variable("PrintReal", KindType.FuncName, new[] { TypeSystem.DoubleType }, TypeSystem.NoType, -1);
+        //    SymTable["PrintInt"] = new Variable("PrintInt", KindType.FuncName, new[] { TypeSystem.IntType }, TypeSystem.NoType, -1);
+        //    SymTable["PrintBool"] = new Variable("PrintBool", KindType.FuncName, new[] { TypeSystem.BoolType }, TypeSystem.NoType, -1);
+        //}
+
         public static List<RuntimeValue> VarValues = new List<RuntimeValue>();
         public static int VarValuesCount = 0;
         public static Dictionary<string, Variable> SymTable = new Dictionary<string, Variable>();

@@ -141,8 +141,8 @@ namespace Interpreter.Visitors
 
         public NodeI VisitBinOp(BinOpNode bin)
         {
-            var lt = CalcType.Get(bin.Left);
-            var rt = CalcType.Get(bin.Right);
+            var lt = GetExprType(bin.Left);
+            var rt = GetExprType(bin.Right);
             var linterpr = bin.Left.Visit(this) as ExprNodeI;
             var rinterpr = bin.Right.Visit(this) as ExprNodeI;
 
@@ -152,9 +152,10 @@ namespace Interpreter.Visitors
             if (lt == TokenType.DoubleLiteral) sit += 3;
             else if (lt == TokenType.Boolean) sit += 6;
 
+
             switch (bin.Op)
             {
-                case '+':
+                case OpType.opPlus:
                     return sit switch
                     {
                         0 => rinterpr is IntNodeI ric ? new PlusIC(linterpr, ric.Val) : new PlusII(linterpr, rinterpr),
@@ -163,7 +164,7 @@ namespace Interpreter.Visitors
                         3 => new PlusRI(linterpr, rinterpr),
                         _ => throw new Exception("Invalid opPlus sit"),
                     };
-                case '-':
+                case OpType.opMinus:
                     return sit switch
                     {
                         0 => new MinusII(linterpr, rinterpr),
@@ -172,7 +173,7 @@ namespace Interpreter.Visitors
                         3 => new MinusRI(linterpr, rinterpr),
                         _ => throw new Exception("Invalid opMinus sit"),
                     };
-                case '*':
+                case OpType.opMultiply:
                     return sit switch
                     {
                         0 => new MultII(linterpr, rinterpr),
@@ -181,7 +182,7 @@ namespace Interpreter.Visitors
                         3 => new MultRI(linterpr, rinterpr),
                         _ => throw new Exception("Invalid opMultiply sit"),
                     };
-                case '/':
+                case OpType.opDivide:
                     return sit switch
                     {
                         0 => new DivII(linterpr, rinterpr),
@@ -190,45 +191,45 @@ namespace Interpreter.Visitors
                         3 => linterpr is DoubleNodeI ric ? new DivRCI(ric.Val, rinterpr) : new DivRI(linterpr, rinterpr),
                         _ => throw new Exception("Invalid opDivide sit"),
                     };
-                //case OpType.opEqual:
-                //    return sit switch
-                //    {
-                //        0 => new EqII(linterpr, rinterpr),
-                //        4 => new EqRR(linterpr, rinterpr),
-                //        1 => new EqIR(linterpr, rinterpr),
-                //        3 => new EqRI(linterpr, rinterpr),
-                //        8 => new EqBB(linterpr, rinterpr),
-                //        _ => throw new Exception("Invalid opEqual sit"),
-                //    };
-                //case OpType.NotEqual:
-                //    return sit switch
-                //    {
-                //        0 => new NotEqII(linterpr, rinterpr),
-                //        4 => new NotEqRR(linterpr, rinterpr),
-                //        1 => new NotEqIR(linterpr, rinterpr),
-                //        3 => new NotEqRI(linterpr, rinterpr),
-                //        8 => new NotEqBB(linterpr, rinterpr),
-                //        _ => throw new Exception("Invalid NotEqual sit"),
-                //    };
-                case '<':
+                case OpType.opEqual:
                     return sit switch
                     {
-                        //0 => rinterpr is IntNodeI ric ? new LessIC(linterpr, ric.Val) : new LessII(linterpr, rinterpr),
+                        0 => new EqualII(linterpr, rinterpr),
+                        4 => new EqualRR(linterpr, rinterpr),
+                        1 => new EqualIR(linterpr, rinterpr),
+                        3 => new EqualRI(linterpr, rinterpr),
+                        8 => new EqualBB(linterpr, rinterpr),
+                        _ => throw new Exception("Invalid opEqual sit"),
+                    };
+                case OpType.opNotEqual:
+                    return sit switch
+                    {
+                        0 => new NotEqualII(linterpr, rinterpr),
+                        4 => new NotEqualRR(linterpr, rinterpr),
+                        1 => new NotEqualIR(linterpr, rinterpr),
+                        3 => new NotEqualRI(linterpr, rinterpr),
+                        8 => new NotEqualBB(linterpr, rinterpr),
+                        _ => throw new Exception("Invalid NotEqual sit"),
+                    };
+                case OpType.opLess:
+                    return sit switch
+                    {
+                        0 => rinterpr is IntNodeI ric ? new LessIC(linterpr, ric.Val) : new LessII(linterpr, rinterpr),
                         4 => new LessRR(linterpr, rinterpr),
                         1 => new LessIR(linterpr, rinterpr),
                         3 => new LessRI(linterpr, rinterpr),
                         _ => throw new Exception("Invalid opLess sit"),
                     };
-                //case OpType.opLessEqual:
-                //    return sit switch
-                //    {
-                //        0 => new LessEqII(linterpr, rinterpr),
-                //        4 => new LessEqRR(linterpr, rinterpr),
-                //        1 => new LessEqIR(linterpr, rinterpr),
-                //        3 => new LessEqRI(linterpr, rinterpr),
-                //        _ => throw new Exception("Invalid opLessEqual sit"),
-                //    };
-                case '>':
+                case OpType.opLessEqual:
+                    return sit switch
+                    {
+                        0 => new LessEqII(linterpr, rinterpr),
+                        4 => new LessEqRR(linterpr, rinterpr),
+                        1 => new LessEqIR(linterpr, rinterpr),
+                        3 => new LessEqRI(linterpr, rinterpr),
+                        _ => throw new Exception("Invalid opLessEqual sit"),
+                    };
+                case OpType.opGreater:
                     return sit switch
                     {
                         0 => new GreaterII(linterpr, rinterpr),
@@ -237,33 +238,51 @@ namespace Interpreter.Visitors
                         3 => new GreaterRI(linterpr, rinterpr),
                         _ => throw new Exception("Invalid opGreater sit"),
                     };
-                //case OpType.opGreaterEqual:
-                //    return sit switch
-                //    {
-                //        0 => new GreaterEqII(linterpr, rinterpr),
-                //        4 => new GreaterEqRR(linterpr, rinterpr),
-                //        1 => new GreaterEqIR(linterpr, rinterpr),
-                //        3 => new GreaterEqRI(linterpr, rinterpr),
-                //        _ => throw new Exception("Invalid opGreaterEqual sit"),
-                //    };
+                case OpType.opGreaterEqual:
+                    return sit switch
+                    {
+                        0 => new GreaterEqII(linterpr, rinterpr),
+                        4 => new GreaterEqRR(linterpr, rinterpr),
+                        1 => new GreaterEqIR(linterpr, rinterpr),
+                        3 => new GreaterEqRI(linterpr, rinterpr),
+                        _ => throw new Exception("Invalid opGreaterEqual sit"),
+                    };
                 default:
                     throw new Exception("Unsupported binary operator");
             }
         }
 
-        //public NodeI VisitProcCall(ProcCallNode p)
-        //{
-        //    return new ProcCallNodeI(
-        //        p.Name.Name,
-        //        p.Pars.Visit(this) as ExprListNodeI
-        //    );
-        //}
-
-        public NodeI VisitBoolean(BooleanNode b) => new BooleanNodeI(n.Value);
-
         public NodeI VisitProcCall(ProcCallNode p)
         {
-            throw new NotImplementedException();
+            return new ProcCallNodeI(
+                p.Name.Name,
+                p.Parameters.Visit(this) as ExprListNodeI
+            );
+        }
+
+        public NodeI VisitBoolean(BooleanNode b) => new BooleanNodeI(b.Value);
+
+        //public NodeI VisitProcCall(ProcCallNode p)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        private TokenType GetExprType(ExprNode expr)
+        {
+            return expr switch
+            {
+                IntNode => TokenType.Int,
+                DoubleNode => TokenType.DoubleLiteral,
+                BooleanNode => TokenType.Boolean,
+                IdNode idNode => SymbolTable.SymTable.ContainsKey(idNode.Name) ? SymbolTable.SymTable[idNode.Name].Type : TokenType.Undefined,
+                BinOpNode binOp => binOp.Op switch
+                {
+                    OpType.opGreater or OpType.opLess or OpType.opEqual or OpType.opNot => TokenType.Boolean,
+                    //'&' or '|' => TokenType.Boolean,
+                    _ => GetExprType(binOp.Left)
+                },
+                _ => TokenType.Undefined
+            };
         }
     }
 }
